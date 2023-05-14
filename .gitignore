@@ -1,0 +1,5 @@
+pub/
+doc/
+*.o
+*.gch
+clash
