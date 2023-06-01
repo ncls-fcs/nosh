@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <libc.h>
+#include <unistd.h>
 #include <errno.h>
 
 #define MAX_DIRECTORY_LENGTH 100
@@ -10,7 +10,7 @@ int main(int argc, char const *argv[]) {
     char *current_directory = malloc(MAX_DIRECTORY_LENGTH_CONST * sizeof(char));
     if((current_directory = getcwd(current_directory, MAX_DIRECTORY_LENGTH_CONST + 1)) == NULL) {
         //error handling
-        perror(errno);
+        perror("getcwd");
     }else {
         printf("%s:", current_directory);
     } 
