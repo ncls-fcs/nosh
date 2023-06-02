@@ -5,7 +5,7 @@
 #include <string.h>
 
 #define MAX_INPUT_SIZE 100
-#define DELIMITER_CHARS "   "
+#define DELIMITER_CHARS "   \n"
 const size_t MAX_DIRECTORY_LENGTH_CONST = 100;
 
 
@@ -72,29 +72,53 @@ int main(int argc, char const *argv[]) {
 
         if(!current_argument) {
             //line was empty
-            fprintf(stderr, "No argument was passed");
-            break;
+            fprintf(stderr, "No argument was passed\n");
+            continue;
         }
-        strcpy(args[0], current_argument);      //copies current argument into args array
+        strcpy(args[0], current_argument);      //copies current argument into args array        
         for (int i = 1; i < sizeof(args); i++) {
             current_argument = strtok(NULL, DELIMITER_CHARS);
-
+            printf("current arg: %s\n", current_argument);
             //if last argument is reached, set NULL character as last object in args array and break from parsing
-            if(current_argument == NULL) {
-                strcpy(args[i], "\0");
+            if(!current_argument) {
+                printf("last arg reached\n");
+                char *adress;
+                adress = args[i];
+                *adress = NULL;
+                printf("null char added: %s\n", args[i]);
                 break;
             }
             //otherwise copy argument into args array
             strcpy(args[i], current_argument);
         }
+
+        /*print array
+        int i = 0;
+        printf("[");
+        while(args[i] != NULL) {
+            printf("%s,", args[i]);
+            i++;
+        }
+        printf("]\n");
+        */
+
+        /*starting new process:*/
+        pid_t pid = fork();
+
+        if(pid == -1) {
+            //forking failed
+
+        }else if (pid == 0) {
+            //in child proccess -> executing command
+            execvp(args[0], &args);
+            //exec only returns on error
+            perror("exec");
+        }else {
+            //in parent proccess
+        }
     }
 
     return 0;
-}
-
-void parse_input(char *input) {
-    
-    
 }
 
 /*
