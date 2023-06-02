@@ -11,7 +11,7 @@ const size_t MAX_DIRECTORY_LENGTH_CONST = 100;
 
 int main(int argc, char const *argv[]) {
     
-    char *args[MAX_INPUT_SIZE];      //array to hold arguments as *char (Strings) (there cant be more arguments than input characters so MAX_INPUT_SIZE is the upper bound for number of arguments (and length of each individual argument))
+    char *args[MAX_INPUT_SIZE];      //array to hold arguments as *char (Strings) (there cant be more arguments than input characters so MAX_INPUT_SIZE is the upper bound for number of arguments)
         
     char *line = malloc(MAX_INPUT_SIZE+1 * sizeof(char));   //reserving memory for the contents of stdin that will be written to *line
     if (line == NULL) {
@@ -66,7 +66,11 @@ int main(int argc, char const *argv[]) {
         
         /*parsing input:*/
 
-        char *current_argument = malloc(sizeof(char) * MAX_INPUT_SIZE);
+        char *current_argument = malloc(sizeof(char) * MAX_INPUT_SIZE);     //allocates memory for buffer in which each parsed argument will reside until it´s added to args array (each argument cant be bigger than the maximum amount of input characters so that´s the upper limit)
+        if(current_argument == NULL) {
+            perror("malloc");
+            exit(EXIT_FAILURE);
+        }
     
         current_argument = strtok(line, DELIMITER_CHARS);
         
@@ -78,8 +82,11 @@ int main(int argc, char const *argv[]) {
         }
 
         args[0] = malloc(sizeof(char) * strlen(current_argument));  //reserves memory in argument array to hold first argument
-        //TODO: error handling for malloc
-        args[0] = current_argument;
+        if(args[0] == NULL) {
+            perror("malloc");
+            exit(EXIT_FAILURE);
+        }
+        args[0] = current_argument;     //adding command name to first position in arguments array
 
         for (int i = 1; i < sizeof(args); i++) {
             current_argument = strtok(NULL, DELIMITER_CHARS);
@@ -89,33 +96,29 @@ int main(int argc, char const *argv[]) {
                 break;
             }
             //otherwise copy argument into args array
-            args[i] = malloc(sizeof(char) * strlen(current_argument));
+            args[i] = malloc(sizeof(char) * strlen(current_argument));  //allocates memory in args array for the argument string
+            if(args[i] == NULL) {
+                perror("malloc");
+                exit(EXIT_FAILURE);
+            }
             args[i] = current_argument;
         }
-
-        /*print array
-        int i = 0;
-        printf("[");
-        while(args[i] != NULL) {
-            printf("%s,", args[i]);
-            i++;
-        }
-        printf("]\n");
-        */
 
         /*starting new process:*/
         pid_t pid = fork();
 
         if(pid == -1) {
             //forking failed
-
+            perror("fork");
+            exit(EXIT_FAILURE);
         }else if (pid == 0) {
             //in child proccess -> executing command
             execvp(args[0], args);
             //exec only returns on error
             perror("exec");
+            exit(EXIT_FAILURE);
         }else {
-            //in parent proccess
+            //in parent proccess -> collecting zombies
         }
     }
 
