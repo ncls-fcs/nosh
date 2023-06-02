@@ -4,6 +4,9 @@
 #include <errno.h>
 #include <string.h>
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #define MAX_INPUT_SIZE 100
 #define DELIMITER_CHARS "   \n"
 const size_t MAX_DIRECTORY_LENGTH_CONST = 100;
@@ -66,6 +69,8 @@ int main(int argc, char const *argv[]) {
         
         /*parsing input:*/
 
+        char *last_argument;
+
         char *current_argument = malloc(sizeof(char) * MAX_INPUT_SIZE);     //allocates memory for buffer in which each parsed argument will reside until it´s added to args array (each argument cant be bigger than the maximum amount of input characters so that´s the upper limit)
         if(current_argument == NULL) {
             perror("malloc");
@@ -92,7 +97,19 @@ int main(int argc, char const *argv[]) {
             current_argument = strtok(NULL, DELIMITER_CHARS);
             //if last argument is reached, set NULL character as last object in args array and break from parsing
             if(!current_argument) {
-                args[i] = NULL;
+                last_argument = malloc(sizeof(char) * strlen(args[i-1]));
+                if(last_argument == NULL) {
+                    perror("malloc");
+                    exit(EXIT_FAILURE);
+                }
+                last_argument = args[i-1];   //assigning last real argument to the variable last_argument
+                
+                if(strcmp(last_argument, "&") == 0) {
+                    //if the last argument is a token indicating a background task, remove it from the array of arguments
+                    args[i-1] = NULL;
+                }else{
+                    args[i] = NULL;
+                }
                 break;
             }
             //otherwise copy argument into args array
@@ -119,6 +136,27 @@ int main(int argc, char const *argv[]) {
             exit(EXIT_FAILURE);
         }else {
             //in parent proccess -> collecting zombies
+
+            //differentiate between fore- and background tasks
+            if(strcmp(last_argument, "&") == 0) {
+                //background task
+
+                continue;
+            }else{
+                //foreground task -> suspend thread until child terminates
+                int exitstatus = 0;
+                wait(&exitstatus);
+
+                if(WIFEXITED(exitstatus)) {
+                    if(WEXITSTATUS(exitstatus) != EXIT_SUCCESS){
+                        if(fprintf(stderr, "call of %s had non succesful return\n", line) < 0){
+                            perror("fprintf");
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+                }
+                printf("Exitstatus [%s] = %d\n", line, exitstatus);
+            }
         }
     }
 
