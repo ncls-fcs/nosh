@@ -11,7 +11,7 @@ const size_t MAX_DIRECTORY_LENGTH_CONST = 100;
 
 int main(int argc, char const *argv[]) {
     
-    char args[MAX_INPUT_SIZE][MAX_INPUT_SIZE];      //array to hold arguments as *char (Strings) (there cant be more arguments than input characters so MAX_INPUT_SIZE is the upper bound for number of arguments (and length of each individual argument))
+    char *args[MAX_INPUT_SIZE];      //array to hold arguments as *char (Strings) (there cant be more arguments than input characters so MAX_INPUT_SIZE is the upper bound for number of arguments (and length of each individual argument))
         
     char *line = malloc(MAX_INPUT_SIZE+1 * sizeof(char));   //reserving memory for the contents of stdin that will be written to *line
     if (line == NULL) {
@@ -66,30 +66,31 @@ int main(int argc, char const *argv[]) {
         
         /*parsing input:*/
 
-        char *current_argument;
+        char *current_argument = malloc(sizeof(char) * MAX_INPUT_SIZE);
     
         current_argument = strtok(line, DELIMITER_CHARS);
-
+        
+        
         if(!current_argument) {
             //line was empty
             fprintf(stderr, "No argument was passed\n");
             continue;
         }
-        strcpy(args[0], current_argument);      //copies current argument into args array        
+
+        args[0] = malloc(sizeof(char) * strlen(current_argument));  //reserves memory in argument array to hold first argument
+        //TODO: error handling for malloc
+        args[0] = current_argument;
+
         for (int i = 1; i < sizeof(args); i++) {
             current_argument = strtok(NULL, DELIMITER_CHARS);
-            printf("current arg: %s\n", current_argument);
             //if last argument is reached, set NULL character as last object in args array and break from parsing
             if(!current_argument) {
-                printf("last arg reached\n");
-                char *adress;
-                adress = args[i];
-                *adress = NULL;
-                printf("null char added: %s\n", args[i]);
+                args[i] = NULL;
                 break;
             }
             //otherwise copy argument into args array
-            strcpy(args[i], current_argument);
+            args[i] = malloc(sizeof(char) * strlen(current_argument));
+            args[i] = current_argument;
         }
 
         /*print array
@@ -110,7 +111,7 @@ int main(int argc, char const *argv[]) {
 
         }else if (pid == 0) {
             //in child proccess -> executing command
-            execvp(args[0], &args);
+            execvp(args[0], args);
             //exec only returns on error
             perror("exec");
         }else {
