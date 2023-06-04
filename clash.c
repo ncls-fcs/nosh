@@ -10,7 +10,7 @@
 
 #include "plist.h"
 
-#define MAX_INPUT_SIZE 100
+#define MAX_INPUT_SIZE 1337
 #define DELIMITER_CHARS "   "
 const size_t MAX_DIRECTORY_LENGTH_CONST = 100;
 
@@ -66,8 +66,8 @@ static int readstdin(char *line){
     }
     /*handling of overlength input:*/
     //fgets reads a maximum of MAX_INPUT_SIZE chars so if MAX_INPUT_SIZE chars are read and the last char is not a newline it means that the input must be longer than MAX_INPUT_SIZE chars (excluding the newline)
-    if(strlen(line) == MAX_INPUT_SIZE && line[MAX_INPUT_SIZE] != '\n') {
-        fprintf(stderr, "Your input was too long (> %d chars, including newline)\n", MAX_INPUT_SIZE);
+    if(line[strlen(line)-1] != '\n') {
+        printf("Your input was too long (> %d chars, including newline)\n", MAX_INPUT_SIZE);
 
         //flushing stdin if input was longer than MAX_INPUT_SIZE chars
         int character;
@@ -123,7 +123,6 @@ int main(int argc, char const *argv[]) {
         current_argument = strtok(line, DELIMITER_CHARS);    
         if(!current_argument) {
             //line was empty
-            fprintf(stderr, "No argument was passed\n");
             continue;
         }
 
@@ -184,8 +183,6 @@ int main(int argc, char const *argv[]) {
             if(isBackgroundProcess) {
                 printf("background process initiated\n");
                 //background task
-                printf("%s", cmd);   
-
                 insertElement(pid, cmd);       //add background task to list of background tasks
             }else{
                 //foreground task -> suspend thread until child terminates
