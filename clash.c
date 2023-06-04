@@ -6,30 +6,46 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <limits.h>
 
 #include "plist.c"
 
 #define MAX_INPUT_SIZE 100
-#define DELIMITER_CHARS "   \n"
+#define DELIMITER_CHARS "   "
 const size_t MAX_DIRECTORY_LENGTH_CONST = 100;
 
-int checkBackgroundProcess(pid_t pid, const char *cmd) {
+static int checkBackgroundProcess(pid_t pid, const char *cmd) {
 
     int exitstatus = 0;
-    if(waitpid(pid, &exitstatus, WNOHANG) == -1) {  
+    pid_t status = waitpid(pid, &exitstatus, WNOHANG);
+    if(status == -1) {  
         perror("waitpid");
-    }
-    if(WIFEXITED(exitstatus)) {                                 //if process specified by pid stopped, report exitstatus and remove process from list of background tasks
-        printf("Exitstatus [%s] = %d\n", cmd, exitstatus);
-        char *buf = "";     //buffer that needs to be given to removeElement
-        removeElement(pid, buf, 0);
+    }else if(status != 0) {
+        if(WIFEXITED(exitstatus)) {                                 //if process specified by pid stopped, report exitstatus and remove process from list of background tasks
+            printf("Exitstatus [%s] = %d\n", cmd, WEXITSTATUS(exitstatus));
+            char *buf = "";     //buffer that needs to be given to removeElement
+            removeElement(pid, buf, 0);
+        }
     }
     return 0;   //traverse through whole list (return value of 0 indicates going to next element in list)
 }
 
-void printcwd(){
-    char *current_directory = malloc(MAX_DIRECTORY_LENGTH_CONST * sizeof(char));
-    if((current_directory = getcwd(current_directory, MAX_DIRECTORY_LENGTH_CONST + 1)) == NULL) {
+static int printElements(pid_t pid, const char *cmd) {
+    printf("%i [%s]\n", pid, cmd);
+    return 0;
+}
+
+static void changeDirectory(char **args, int number_of_elements){
+    if(number_of_elements == 3) {
+        chdir(args[1]);
+    }else{
+        printf("usage: cd <directory>");
+    }
+}
+
+static void printcwd(){
+    char current_directory[PATH_MAX];
+    if(getcwd(current_directory, PATH_MAX) == NULL) {
         //error handling
         perror("getcwd");
     }else {
@@ -37,7 +53,7 @@ void printcwd(){
     }
 }
 
-int readstdin(char *line){
+static int readstdin(char *line){
     /*reads line of MAX_INPUT_SIZE length from stdin and saves content to *line parameter. If input on stdin is overlength, flushes stdin and returns -1, returns 0 on success*/
     if(fgets(line, MAX_INPUT_SIZE+1, stdin) == NULL){
         /*fgets error handling*/
@@ -76,14 +92,11 @@ int readstdin(char *line){
 int main(int argc, char const *argv[]) {
     
     char *args[MAX_INPUT_SIZE];      //array to hold arguments as *char (Strings) (there cant be more arguments than input characters so MAX_INPUT_SIZE is the upper bound for number of arguments)
-        
-    char *line = malloc(MAX_INPUT_SIZE+1 * sizeof(char));   //reserving memory for the contents of stdin that will be written to *line
-    if (line == NULL) {
-        perror("malloc");
-        exit(EXIT_FAILURE);
-    }
+
+    char line[MAX_INPUT_SIZE+1 * sizeof(char)];   //reserving memory for the contents of stdin that will be written to *line
     
     int (*checkBackgroundProcessPtr) (pid_t, const char *) = &checkBackgroundProcess;
+    int isBackgroundProcess = 0;    //flag to indicate if '&' symbol was typed after command
 
     while(!feof(stdin)) {
         /*collecting zombies of background tasks:*/
@@ -97,24 +110,16 @@ int main(int argc, char const *argv[]) {
             continue;   //if input was overlength, skip to new command line
         }
 
-        /*backup of current line*/
-        char *cmd = malloc(sizeof(char) * strlen(line));
-        if(cmd == NULL) {
-            perror("malloc");
-            exit(EXIT_FAILURE);
-        }
-        strcpy(cmd, line);          //copy contents (without the newline character) of previously read stdin to "cmd" to be used later (line is later modified by strtok)
-        cmd[strlen(line)-1] = '\0';
-
-        char *last_argument;    //pointer to hold the last argument in line (to check wether it´s a "&")
-
         /*parsing input:*/
-        char *current_argument = malloc(sizeof(char) * MAX_INPUT_SIZE);     //allocates memory for buffer in which each parsed argument will reside until it´s added to args array (each argument cant be bigger than the maximum amount of input characters so that´s the upper limit)
-        if(current_argument == NULL) {
-            perror("malloc");
-            exit(EXIT_FAILURE);
+        char *current_argument;     //buffer in which each parsed argument will reside until it´s added to args array
+
+        if(line[strlen(line)-2] == '&') {
+            isBackgroundProcess = 1;
+            line[strlen(line)-2] = '\0';
+        } else {
+            line[strlen(line)-1] = '\0';       //removes "\n"
         }
-    
+
         current_argument = strtok(line, DELIMITER_CHARS);    
         if(!current_argument) {
             //line was empty
@@ -122,41 +127,42 @@ int main(int argc, char const *argv[]) {
             continue;
         }
 
-        args[0] = malloc(sizeof(char) * strlen(current_argument));  //reserves memory in argument array to hold first argument
-        if(args[0] == NULL) {
+        args[0] = current_argument;     //adding command name to first position in arguments array
+
+        int number_of_args = 1;
+        do{
+            current_argument = strtok(NULL, DELIMITER_CHARS);
+            args[number_of_args] = current_argument;
+            number_of_args++;
+        }while (current_argument);
+
+        /*own commands*/
+        if(strcmp(args[0], "jobs") == 0) {
+            if(number_of_args > 2) {
+                printf("usage: jobs\n");
+            }else{
+                walkList(printElements);
+            }
+            continue;
+        }else if(strcmp(args[0], "cd") == 0) {
+            changeDirectory(args, number_of_args);
+        }
+
+
+        
+        //make command string out of args array (without '&')
+        int i = 0;
+        char *cmd = malloc(MAX_INPUT_SIZE);       //gets free´d in plist.c when removing element associated with cmd
+        if(cmd == NULL) {
             perror("malloc");
             exit(EXIT_FAILURE);
         }
-        args[0] = current_argument;     //adding command name to first position in arguments array
-
-        for (int i = 1; i < sizeof(args); i++) {
-            current_argument = strtok(NULL, DELIMITER_CHARS);
-
-            //if last argument is reached, set NULL character as last object in args array and break from parsing
-            if(!current_argument) {
-                last_argument = malloc(sizeof(char) * strlen(args[i-1]));
-                if(last_argument == NULL) {
-                    perror("malloc");
-                    exit(EXIT_FAILURE);
-                }
-                last_argument = args[i-1];   //assigning last real argument to the variable last_argument
-                
-                if(strcmp(last_argument, "&") == 0) {
-                    //if the last argument is a token indicating a background task, remove it from the array of arguments
-                    args[i-1] = NULL;
-                }else{
-                    args[i] = NULL;
-                }
-                break;
-            }
-            //otherwise copy argument into args array
-            args[i] = malloc(sizeof(char) * strlen(current_argument));  //allocates memory in args array for the argument string
-            if(args[i] == NULL) {
-                perror("malloc");
-                exit(EXIT_FAILURE);
-            }
-            args[i] = current_argument;
+        while(args[i]){
+            strcat(cmd, args[i]);
+            strcat(cmd, " ");
+            i++;
         }
+        cmd[strlen(cmd)-1] = '\0';  //remove last space     
 
         /*starting new process:*/
         pid_t pid = fork();
@@ -175,20 +181,23 @@ int main(int argc, char const *argv[]) {
             //in parent proccess
 
             //differentiate between fore- and background tasks
-            if(strcmp(last_argument, "&") == 0) {
+            if(isBackgroundProcess) {
+                printf("background process initiated\n");
                 //background task
+                printf("%s", cmd);   
+
                 insertElement(pid, cmd);       //add background task to list of background tasks
-                continue;
             }else{
                 //foreground task -> suspend thread until child terminates
                 int exitstatus = 0;
                 wait(&exitstatus);
 
                 if(WIFEXITED(exitstatus)) {
-                    printf("Exitstatus [%s] = %d\n", cmd, exitstatus);
+                    printf("Exitstatus [%s] = %d\n", cmd, WEXITSTATUS(exitstatus));
                 }
             }
         }
+        isBackgroundProcess = 0;
     }
 
     return 0;
