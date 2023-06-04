@@ -8,9 +8,12 @@ all: clash
 clean: 
 	rm -f clash clash.o
 
-clash: clash.o
-	$(CC) $(CFLAGS) -o clash clash.o
+clash: clash.o plist.o
+	$(CC) $(CFLAGS) -o clash clash.o plist.o
 
-clash.o: clash.c plist.c
-	$(CC) -c clash.c plist.c
+clash.o: clash.c
+	$(CC) $(CFLAGS) -c clash.c
+
+plist.o: plist.c plist.h
+	$(CC) $(CFLAGS) -c plist.c
 
