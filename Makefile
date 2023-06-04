@@ -11,6 +11,6 @@ clean:
 clash: clash.o
 	$(CC) $(CFLAGS) -o clash clash.o
 
-clash.o: clash.c
-	$(CC) -c clash.c
+clash.o: clash.c plist.c
+	$(CC) -c clash.c plist.c
 
