@@ -8,7 +8,7 @@
 #include <sys/wait.h>
 #include <limits.h>
 
-#include "plist.c"
+#include "plist.h"
 
 #define MAX_INPUT_SIZE 100
 #define DELIMITER_CHARS "   "
@@ -43,7 +43,7 @@ static void changeDirectory(char **args, int number_of_elements){
     }
 }
 
-static void printcwd(){
+static void printcwd(void){
     char current_directory[PATH_MAX];
     if(getcwd(current_directory, PATH_MAX) == NULL) {
         //error handling

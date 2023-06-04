@@ -6,7 +6,7 @@ CFLAGS = -std=c11 -pedantic -Wall -Werror -D_XOPEN_SOURCE=700
 all: clash
 
 clean: 
-	rm -f clash clash.o
+	rm -f clash clash.o plist.o
 
 clash: clash.o plist.o
 	$(CC) $(CFLAGS) -o clash clash.o plist.o
