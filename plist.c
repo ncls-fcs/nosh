@@ -20,6 +20,7 @@ void walkList(int (*callback) (pid_t, const char *)) {
 	//only walks through list further if next element exists and callback function returned 0
 	while(current_elem && callback(current_elem->pid, current_elem->cmdLine) == 0) {
 		current_elem = current_elem->next;
+	}
 
 }
 
