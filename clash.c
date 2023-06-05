@@ -24,7 +24,10 @@ static int checkBackgroundProcess(pid_t pid, const char *cmd) {
         if(WIFEXITED(exitstatus)) {                                 //if process specified by pid stopped, report exitstatus and remove process from list of background tasks
             printf("Exitstatus [%s] = %d\n", cmd, WEXITSTATUS(exitstatus));
             char *buf = "";     //buffer that needs to be given to removeElement
-            removeElement(pid, buf, 0);
+            if(removeElement(pid, buf, 0) == -1){
+                fprintf(stderr, "element with pid %d does not exist in list", pid);
+                exit(EXIT_FAILURE);
+            }
         }
     }
     return 0;   //traverse through whole list (return value of 0 indicates going to next element in list)
@@ -84,6 +87,8 @@ static int readstdin(char *line){
         }
         //when stdin is flushed, continue reading the next line
         return -1;
+    }else if(strlen(line) < 2){       //check if line was empty (only newline was sent)
+        return -1;
     }
     return 0;
 }
@@ -118,7 +123,7 @@ int main(int argc, char const *argv[]) {
             line[strlen(line)-2] = '\0';
         } else {
             line[strlen(line)-1] = '\0';       //removes "\n"
-        }
+        } 
 
         current_argument = strtok(line, DELIMITER_CHARS);    
         if(!current_argument) {
@@ -151,11 +156,9 @@ int main(int argc, char const *argv[]) {
         
         //make command string out of args array (without '&')
         int i = 0;
-        char *cmd = malloc(MAX_INPUT_SIZE);       //gets free´d in plist.c when removing element associated with cmd
-        if(cmd == NULL) {
-            perror("malloc");
-            exit(EXIT_FAILURE);
-        }
+        char cmd[MAX_INPUT_SIZE];       //gets free´d in plist.c when removing element associated with cmd
+        cmd[0] = '\0';      //delete buffer
+
         while(args[i]){
             strcat(cmd, args[i]);
             strcat(cmd, " ");
