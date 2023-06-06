@@ -17,7 +17,7 @@ const size_t MAX_DIRECTORY_LENGTH_CONST = 100;
 static int checkBackgroundProcess(pid_t pid, const char *cmd) {
 
     int exitstatus = 0;
-    pid_t status = waitpid(pid, &exitstatus, WNOHANG);
+    pid_t status = waitpid(pid, &exitstatus, WNOHANG );
     if(status == -1) {  
         perror("waitpid");
     }else if(status != 0) {
@@ -196,7 +196,7 @@ int main(int argc, char const *argv[]) {
             }else{
                 //foreground task -> suspend thread until child terminates
                 int exitstatus = 0;
-                wait(&exitstatus);
+                waitpid(pid, &exitstatus, 0);
 
                 if(WIFEXITED(exitstatus)) {
                     printf("Exitstatus [%s] = %d\n", cmd, WEXITSTATUS(exitstatus));
