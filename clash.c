@@ -47,23 +47,21 @@ static void changeDirectory(char **args, int number_of_elements){
             perror("getcwd");
             exit(EXIT_FAILURE);
         }
-        printf("cwd written ");
 
-
-        if(args[1][0] == '.'){
-            printf("in . schleife ");
-
+        if(strcmp(args[1], "..") == 0){
+            char cwd_for_strtok[PATH_MAX];
+            strcpy(cwd_for_strtok, cwd);
             //strip cwd of prefix
             char *delim = "/";
             char *result;
             char *token;
-            printf("init böse");
-            result = token = strtok(cwd, delim);
+            result = token = strtok(cwd_for_strtok, delim);
             while((token = strtok(NULL, delim))) {
                 result = token;
             }
-            strncpy(directory_to_change_to, cwd, strlen(cwd)-strlen(result));   //removes last directory from current working directory string
-            printf("directory to change to: %s\n", directory_to_change_to);
+
+            strcpy(directory_to_change_to, cwd);   
+            directory_to_change_to[strlen(cwd)-strlen(result)-1] = '\0';   //removes last directory from current working directory string
 
         }else if(args[1][0] != '/') {
             //functionality to cd using relative paths
@@ -73,7 +71,6 @@ static void changeDirectory(char **args, int number_of_elements){
         }else{
             strcpy(directory_to_change_to, args[1]);
         }
-        printf("directory to change to: %s\n", directory_to_change_to);
         chdir(directory_to_change_to);
     }else{
         printf("usage: cd <directory>");
