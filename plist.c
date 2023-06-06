@@ -18,8 +18,13 @@ static struct qel {
 void walkList(int (*callback) (pid_t, const char *)) {
 	struct qel *current_elem = head;
 	//only walks through list further if next element exists and callback function returned 0
-	while(current_elem && callback(current_elem->pid, current_elem->cmdLine) == 0) {
-		current_elem = current_elem->next;
+	while(current_elem) {
+		struct qel *next_elem = current_elem->next;
+		int callback_ret_val = callback(current_elem->pid, current_elem->cmdLine);
+		current_elem = next_elem;
+		if(callback_ret_val != 0) {
+			break;
+		}
 	}
 
 }

@@ -93,6 +93,12 @@ static int readstdin(char *line){
     return 0;
 }
 
+int purgeList(pid_t pid, const char* cmd) {
+    char *buf = "";
+    removeElement(pid, buf, 0);
+    return 0;
+}
+
 
 int main(int argc, char const *argv[]) {
     
@@ -199,6 +205,9 @@ int main(int argc, char const *argv[]) {
         }
         isBackgroundProcess = 0;
     }
+
+    int (*purgeListPtr) (pid_t, const char *) = &purgeList;
+    walkList(purgeListPtr);      //remove all still running background processes from list when exiting from shell
 
     return 0;
 }
