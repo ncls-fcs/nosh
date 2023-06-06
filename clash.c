@@ -40,7 +40,41 @@ static int printElements(pid_t pid, const char *cmd) {
 
 static void changeDirectory(char **args, int number_of_elements){
     if(number_of_elements == 3) {
-        chdir(args[1]);
+        char directory_to_change_to[PATH_MAX];
+
+        char cwd[PATH_MAX];
+        if(getcwd(cwd, PATH_MAX) == NULL) {
+            perror("getcwd");
+            exit(EXIT_FAILURE);
+        }
+        printf("cwd written ");
+
+
+        if(args[1][0] == '.'){
+            printf("in . schleife ");
+
+            //strip cwd of prefix
+            char *delim = "/";
+            char *result;
+            char *token;
+            printf("init böse");
+            result = token = strtok(cwd, delim);
+            while((token = strtok(NULL, delim))) {
+                result = token;
+            }
+            strncpy(directory_to_change_to, cwd, strlen(cwd)-strlen(result));   //removes last directory from current working directory string
+            printf("directory to change to: %s\n", directory_to_change_to);
+
+        }else if(args[1][0] != '/') {
+            //functionality to cd using relative paths
+
+            strcat(directory_to_change_to, "/");
+            strcat(directory_to_change_to, args[1]);
+        }else{
+            strcpy(directory_to_change_to, args[1]);
+        }
+        printf("directory to change to: %s\n", directory_to_change_to);
+        chdir(directory_to_change_to);
     }else{
         printf("usage: cd <directory>");
     }
@@ -156,6 +190,7 @@ int main(int argc, char const *argv[]) {
             continue;
         }else if(strcmp(args[0], "cd") == 0) {
             changeDirectory(args, number_of_args);
+            continue;
         }
 
 
