@@ -12,13 +12,20 @@
 
 #define MAX_INPUT_SIZE 1337
 #define DELIMITER_CHARS "   "
+/*I----> +--------------------------------------------------------------------+
+         | Tabs als delimiter muessen auch mit rein (\t). (-0.5)              |
+         +-------------------------------------------------------------------*/
 const size_t MAX_DIRECTORY_LENGTH_CONST = 100;
 
 static int checkBackgroundProcess(pid_t pid, const char *cmd) {
 
     int exitstatus = 0;
     pid_t status = waitpid(pid, &exitstatus, WNOHANG);
-    if(status == -1) {  
+    if(status == -1) {
+/*I----> +--------------------------------------------------------------------+
+         | Hier muss auf errno == ECHILD geprüft werden (kein Fehler), sonst  |
+         | mit perror + exit abbrechen. (-0.5)                                |
+         +-------------------------------------------------------------------*/
         perror("waitpid");
     }else if(status != 0) {
         if(WIFEXITED(exitstatus)) {                                 //if process specified by pid stopped, report exitstatus and remove process from list of background tasks
@@ -51,6 +58,11 @@ static void printcwd(void){
     if(getcwd(current_directory, PATH_MAX) == NULL) {
         //error handling
         perror("getcwd");
+/*I----> +--------------------------------------------------------------------+
+         | Fehlerbehandlung für getcwd() und die Vergrößerung des Buffers     |
+         | fehlt. Siehe Hinweis auf der Aufgabenstellung bzw. man 3p getcwd   |
+         | (-3)                                                               |
+         +-------------------------------------------------------------------*/
     }else {
         printf("%s: ", current_directory);
     }
@@ -71,6 +83,9 @@ static int readstdin(char *line){
     //fgets reads a maximum of MAX_INPUT_SIZE chars so if MAX_INPUT_SIZE chars are read and the last char is not a newline it means that the input must be longer than MAX_INPUT_SIZE chars (excluding the newline)
     if(line[strlen(line)-1] != '\n') {
         printf("Your input was too long (> %d chars, including newline)\n", MAX_INPUT_SIZE);
+/*I----> +--------------------------------------------------------------------+
+         | Fehlerausgabe sollte immer auf stderr ausgegeben werden (-0.5)     |
+         +-------------------------------------------------------------------*/
 
         //flushing stdin if input was longer than MAX_INPUT_SIZE chars
         int character;
@@ -150,6 +165,9 @@ int main(int argc, char const *argv[]) {
             continue;
         }else if(strcmp(args[0], "cd") == 0) {
             changeDirectory(args, number_of_args);
+/*I----> +--------------------------------------------------------------------+
+         | hier fehlt ein continue (-0.5)                                     |
+         +-------------------------------------------------------------------*/
         }
 
 
@@ -187,11 +205,21 @@ int main(int argc, char const *argv[]) {
                 printf("background process initiated\n");
                 //background task
                 insertElement(pid, cmd);       //add background task to list of background tasks
+/*I----> +--------------------------------------------------------------------+
+         | Fehlerbehandlung fuer insertElement fehlt. Wir haben ja ein        |
+         | Problem in unserer shell wenn wir uns Hintergrundprozesse nicht    |
+         | mehr merken koennen. (-1.0)                                        |
+         +-------------------------------------------------------------------*/
             }else{
                 //foreground task -> suspend thread until child terminates
                 int exitstatus = 0;
                 wait(&exitstatus);
-
+/*I----> +--------------------------------------------------------------------+
+         | Vorsicht: mit wait wartest du auf einen beliebigen kindprozess,    |
+         | sollte nun also ein Hintergrundprozess durch ein signal beendet    |
+         | werden wartest du hier also nicht mehr auf deinen gerade           |
+         | gestarteten Vordergrundprozess. (-1.0)                             |
+         +-------------------------------------------------------------------*/
                 if(WIFEXITED(exitstatus)) {
                     printf("Exitstatus [%s] = %d\n", cmd, WEXITSTATUS(exitstatus));
                 }
@@ -219,3 +247,7 @@ int start_new_process() {
 }
 */
 
+
+/*P----> +--------------------------------------------------------------------+
+         | Punktabzug in dieser Datei: 7.0 Punkte                             |
+         +-------------------------------------------------------------------*/
