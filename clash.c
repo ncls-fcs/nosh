@@ -57,9 +57,9 @@ static void printcwd(void){
 }
 
 static int readstdin(char *line){
-    /*reads line of MAX_INPUT_SIZE length from stdin and saves content to *line parameter. If input on stdin is overlength, flushes stdin and returns -1, returns 0 on success*/
+    /* reads line of MAX_INPUT_SIZE length from stdin and saves content to *line parameter. If input on stdin is overlength, flushes stdin and returns -1, returns 0 on success */
     if(fgets(line, MAX_INPUT_SIZE+1, stdin) == NULL){
-        /*fgets error handling*/
+        /* fgets error handling */
         if(ferror(stdin)) {     //real error -> terminate with EXIT_FAILURE
             perror("fgets");
             exit(EXIT_FAILURE);
@@ -67,7 +67,7 @@ static int readstdin(char *line){
             exit(EXIT_SUCCESS);
         }
     }
-    /*handling of overlength input:*/
+    /* handling of overlength input: */
     //fgets reads a maximum of MAX_INPUT_SIZE chars so if MAX_INPUT_SIZE chars are read and the last char is not a newline it means that the input must be longer than MAX_INPUT_SIZE chars (excluding the newline)
     if(line[strlen(line)-1] != '\n') {
         printf("Your input was too long (> %d chars, including newline)\n", MAX_INPUT_SIZE);
@@ -104,18 +104,18 @@ int main(int argc, char const *argv[]) {
     int isBackgroundProcess = 0;    //flag to indicate if '&' symbol was typed after command
 
     while(!feof(stdin)) {
-        /*collecting zombies of background tasks:*/
+        /* collecting zombies of background tasks: */
         walkList(checkBackgroundProcessPtr);
 
-        /*printing current working directory:*/
+        /* printing current working directory: */
         printcwd();
 
-        /*reading arguments:*/
+        /* reading arguments: */
         if(readstdin(line) == -1){   //reading MAX_INPUT_SIZE chars from stdin and saving them to *line
             continue;   //if input was overlength, skip to new command line
         }
 
-        /*parsing input:*/
+        /* parsing input: */
         char *current_argument;     //buffer in which each parsed argument will reside until it´s added to args array
 
         if(line[strlen(line)-2] == '&') {
@@ -140,7 +140,7 @@ int main(int argc, char const *argv[]) {
             number_of_args++;
         }while (current_argument);
 
-        /*own commands*/
+        /* own commands */
         if(strcmp(args[0], "jobs") == 0) {
             if(number_of_args > 2) {
                 printf("usage: jobs\n");
@@ -166,7 +166,7 @@ int main(int argc, char const *argv[]) {
         }
         cmd[strlen(cmd)-1] = '\0';  //remove last space     
 
-        /*starting new process:*/
+        /* starting new process: */
         pid_t pid = fork();
 
         if(pid == -1) {
@@ -218,3 +218,4 @@ int start_new_process() {
     
 }
 */
+
