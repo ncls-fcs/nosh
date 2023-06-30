@@ -4,11 +4,6 @@
 
 #include "plist.h"
 
-/* Die Funktionen insertElement() und removeElement() bitte unveraendert lassen!
- * Falls Sie einen Bug in dieser Implementierung finden, melden Sie diesen bitte
- * an i4sp@cs.fau.de
- */
-
 static struct qel {
 	pid_t pid;
 	char *cmdLine;
